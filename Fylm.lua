@@ -90,6 +90,10 @@ end
 -- end
 
 local function create_fylm_scene(properties, property)
+    if sources.check_scene then
+        return
+    end
+
     sources.create_scene(fylm.defs.room)
     for i = 1, fylm.defs.sit_count, 1 do
         add_sit(i)
