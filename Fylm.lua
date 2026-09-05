@@ -179,7 +179,7 @@ function script_defaults(settings)
     obslua.obs_data_set_default_string(settings, "viewer", "Pulha")
     obslua.obs_data_set_default_int(settings, "sit_count", 5)
     obslua.obs_data_set_default_string(settings, "sits_alignment", "low")
-    obslua.obs_data_set_default_bool(settings, "fDebug", true)
+    obslua.obs_data_set_default_bool(settings, "fDebug", false)
 end
 
 function script_load(settings)
