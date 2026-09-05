@@ -62,7 +62,6 @@ local function execute()
 end
 
 local function receive(user, inimsg)
-    print("recebido")
     local fn = command_map[inimsg]
     if fn then
         enqueue(user, fn)
@@ -81,7 +80,6 @@ end
 -- ==================================================
 
 local function entrar(user)
-    print("entrado: " .. user)
     local viewers_count = table_count(viewer_map)
     if not viewer_map[user] and viewers_count < fylm.defs.sit_count then
         local i = viewers_count + 1
