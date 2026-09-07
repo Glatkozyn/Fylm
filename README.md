@@ -1,7 +1,10 @@
 # Fylm
 Plugin/Script para maior interação do chat em lives de filme muito legal e maneiro do glat. :D
 
+### Instalação
+Na aba Script do OBS, adicionar o arquivo Fylm.lua
+
 ### AVISOS
-* Mudar alinhamento antes de criar a cena causa crash
+* Mudar alinhamento dos assentos antes de criar a cena causa crash
 * Necessário apagar e recriar a cena a cada conexão
 * (provavelmente muitos outros bugs)
