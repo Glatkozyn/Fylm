@@ -90,7 +90,7 @@ end
 -- end
 
 local function create_fylm_scene(properties, property)
-    if sources.check_scene then
+    if sources.check_scene() then
         return
     end
 

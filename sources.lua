@@ -11,6 +11,10 @@ local active_animations = {}
 
 ---@return boolean
 local function check_scene()
+    if not current_scene_name then
+        return false
+    end
+
     local source = obslua.obs_get_source_by_name(current_scene_name)
     local exists
     if source then
