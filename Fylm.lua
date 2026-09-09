@@ -25,38 +25,57 @@ end
 
 -- =========================
 
-local function connection(properties, property)
-    twitch.connect(fylm.setts.channel_name)
+local function treat_receive()
+    for _ = 1, 50 do
+        local user, msg = twitch.listen()
+        if not user then
+            break
+        end
 
-    local function treat_receive()
-        local ret1, ret2 = twitch.listen()
-        local user, msg
-        if not ret1 then
-            -- print("error:" .. ret2)
-        else
-            user, msg = ret1, ret2
-        end
-        if user and msg then
-            -- print(user .. ":" .. msg)
-            local pri = msg:match("^([^ ]+)")
-            commands.send(user, pri)
-        end
+        local pri = msg:match("^([^ ]+)")
+        commands.send(user, pri)
     end
+end
+
+local function connection(properties, property)
+    local ret1, ret2 = twitch.connect(fylm.setts.channel_name)
+    if not ret1 then
+        fDebug.error(ret2)
+        return
+    end
+
+    fDebug.success("conexão twitch online")
 
     obslua.timer_add(treat_receive, 500)
 end
 
 local function disconnection(properties, property)
-    twitch.disconnect()
+    if twitch.disconnect() then
+        fDebug.warn("conexão twitch desonline")
+        obslua.timer_remove(treat_receive)
+        commands.cleanup()
+        if sources.check_scene() then
+            for i = 1, fylm.defs.seat_count do
+                if not sources.destroy(fylm.defs.viewer .. i) then
+                    return
+                end
+            end
+        end
+    else
+        fDebug.warn("conexão twitch já está desonline")
+    end
 end
 
 -- =========================
 
 local function align(name, idx)
     local alignment_y = 0
-    local alignment = fylm.setts.sits_alignment or fylm.defs.sits_alignment
+    local alignment = fylm.setts.seats_alignment or fylm.defs.seats_alignment
     if alignment == "low" then
         alignment_y = sources.current_scene_size.height - 64
+    end
+    if not idx then
+        idx = 1
     end
     local pos = {
         x = 512 + (96 * idx),
@@ -66,27 +85,28 @@ local function align(name, idx)
 end
 fylm.align = align
 
-local function realign_sits()
-    if not sources.check_scene then
+local function realign_seats()
+    if not sources.check_scene() then
         return
     end
-    for i = 1, fylm.defs.sit_count do
-        align("sit" .. i, i)
+
+    for i = 1, fylm.defs.seat_count do
+        align("seat" .. i, i)
     end
-    for i = 1, fylm.defs.sit_count do
+    for i = 1, fylm.defs.seat_count do
         if not align(fylm.defs.viewer .. i, i) then
             return
         end
     end
 end
 
-local function add_sit(i)
-    sources.create_image("sit" .. i, fylm.assets_folder .. "assento_sprite.png")
-    align("sit" .. i, i)
+local function add_seat(i)
+    sources.create_image("seat" .. i, fylm.assets_folder .. "assento_sprite.png")
+    align("seat" .. i, i)
 end
 
--- local function create_sit(properties, property)
---     add_sit(data.defs.sit_count)
+-- local function create_seat(properties, property)
+--     add_seat(data.defs.seat_count)
 -- end
 
 local function create_fylm_scene(properties, property)
@@ -95,8 +115,8 @@ local function create_fylm_scene(properties, property)
     end
 
     sources.create_scene(fylm.defs.room)
-    for i = 1, fylm.defs.sit_count, 1 do
-        add_sit(i)
+    for i = 1, fylm.defs.seat_count, 1 do
+        add_seat(i)
     end
 end
 
@@ -143,7 +163,7 @@ function script_properties()
 
     local alinhamentos_prop = obslua.obs_properties_add_list(
         props,
-        "sits_alignment",
+        "seats_alignment",
         "Alinhamento de assentos",
         obslua.OBS_COMBO_TYPE_LIST,
         obslua.OBS_COMBO_FORMAT_STRING
@@ -181,8 +201,8 @@ function script_defaults(settings)
     obslua.obs_data_set_default_string(settings, "channel_name", "")
     obslua.obs_data_set_default_string(settings, "room", "Sala de Fylm")
     obslua.obs_data_set_default_string(settings, "viewer", "Pulha")
-    obslua.obs_data_set_default_int(settings, "sit_count", 5)
-    obslua.obs_data_set_default_string(settings, "sits_alignment", "low")
+    obslua.obs_data_set_default_int(settings, "seat_count", 5)
+    obslua.obs_data_set_default_string(settings, "seats_alignment", "low")
     obslua.obs_data_set_default_bool(settings, "fDebug", false)
 end
 
@@ -193,23 +213,24 @@ function script_load(settings)
     local setts_str = obslua.obs_data_get_json(settings)
     fylm.setts = updata(setts_str)
 
-    fDebug.enabled = fylm.setts.fDebug or fylm.defs.fDebug
+    fDebug.enabled(fylm.setts.fDebug or fylm.defs.fDebug)
+
+    sources.load({ current_scene_name = fylm.defs.room })
 end
 
 function script_update(settings)
     local setts_str = obslua.obs_data_get_json(settings)
 
-    local old_align = fylm.setts.sits_alignment or nil
+    local old_align = fylm.setts.seats_alignment or nil
     local old_fDebug = fylm.setts.fDebug or nil
+    local old_room = fylm.setts.room or nil
 
     fylm.setts = updata(setts_str)
 
-    if old_align ~= fylm.setts.sits_alignment then
-        realign_sits()
+    if old_align ~= fylm.setts.seats_alignment then
+        realign_seats()
     end
-    if old_fDebug ~= fylm.setts then
-        fDebug.enabled = fylm.setts.fDebug
-    end
+    fDebug.enabled(fylm.setts.fDebug)
 end
 
 function script_tick(delta)

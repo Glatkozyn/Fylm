@@ -1,11 +1,14 @@
 
 local fDebug = require("fDebug")
 
-local scene_created = false
 local current_scene_name
 local current_scene_size = { width = 0, height = 0 }
 
 local active_animations = {}
+
+local function load(data)
+    current_scene_name = data.current_scene_name
+end
 
 -- ==================================================
 
@@ -44,7 +47,6 @@ local function create_scene(name)
         return
     end
 
-    scene_created = true
     get_scene_size(source)
 
     obslua.obs_scene_release(scene)
@@ -237,7 +239,7 @@ local function destroy(sceneitem_name)
 end
 
 local function tick_moves(delta)
-    if not scene_created or next(active_animations) == nil then
+    if not current_scene_name or next(active_animations) == nil then
         return
     end
 
@@ -312,6 +314,7 @@ end
 local M = {}
 
 M.current_scene_size = current_scene_size
+M.load = load
 M.check_scene = check_scene
 M.create_scene = create_scene
 M.create_image = create_image

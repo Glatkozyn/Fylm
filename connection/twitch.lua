@@ -2,8 +2,8 @@
 local socket = require("connection.ljsocket")
 
 local M = {}
-
 local client
+local buffer
 
 function M.connect(channel)
 	channel = channel:gsub("^#", ""):lower()
@@ -28,6 +28,7 @@ function M.connect(channel)
 	sock:send("JOIN #" .. channel .. "\r\n")
 
 	client = sock
+	buffer = ""
 
 	return true
 end
@@ -37,7 +38,10 @@ function M.disconnect()
 		client:send("QUIT\r\n")
 		client:close()
 		client = nil
+		buffer = nil
+		return true
 	end
+	return false
 end
 
 function M.listen()
@@ -45,23 +49,36 @@ function M.listen()
 		return nil, "not connected"
 	end
 
+	local data, err = client:receive(4096)
+
+    if data then
+        buffer = buffer .. data
+    elseif err ~= "timeout" then
+        return nil, err
+    end
+
 	while true do
-		local message, err = client:receive(4096)
+        local line_end = buffer:find("\r\n", 1, true)
 
-		if not message then
-			return nil, err
-		end
+        if not line_end then
+            break
+        end
 
-		if message:sub(1, 4) == "PING" then
-			client:send("PONG :tmi.twitch.tv\r\n")
-		else
-			local user, msg = message:match("^:([^!]+)!.- PRIVMSG #[^ ]+ :(.+)$")
+        local line = buffer:sub(1, line_end - 1)
+        buffer = buffer:sub(line_end + 2)
 
-			if user and msg then
-				return user, msg
-			end
-		end
-	end
+        if line:sub(1, 4) == "PING" then
+            client:send("PONG :tmi.twitch.tv\r\n")
+        else
+            local user, msg = line:match("^:([^!]+)!.- PRIVMSG #[^ ]+ :(.+)$")
+
+            if user and msg then
+                return user, msg
+            end
+        end
+    end
+
+    return nil, "timeout"
 end
 
 return M

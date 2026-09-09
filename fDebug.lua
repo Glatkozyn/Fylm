@@ -110,7 +110,9 @@ local function protect(fn, name)
     return ok, result
 end
 
-M.enabled = enabled
+M.enabled = function (set)
+        enabled = set
+    end
 M.info = info
 M.warn = warn
 M.success = success
