@@ -118,7 +118,7 @@ end
 command_map[",entrar"] = { fn = entrar, sitted = false, t = "false" }
 
 local function pipoca(user)
-    local name = "pipo" .. math.random(999)
+    local name = "pipo" .. string.format("%04x", math.random(0, 0xffff))
     sources.create_image(name, fylm.assets_folder .. "pipoca_spriteplaceholder.png")
 
     local i = viewer_map[user]

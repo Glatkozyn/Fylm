@@ -216,6 +216,8 @@ function script_load(settings)
     fDebug.enabled(fylm.setts.fDebug or fylm.defs.fDebug)
 
     sources.load({ current_scene_name = fylm.defs.room })
+
+    math.randomseed(os.time())
 end
 
 function script_update(settings)
